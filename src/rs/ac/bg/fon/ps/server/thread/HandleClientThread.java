@@ -17,6 +17,8 @@ import rs.ac.bg.fon.ps.common.domain.Zubar;
 import rs.ac.bg.fon.ps.common.domain.ZubarKvalifikacija;
 import rs.ac.bg.fon.ps.common.operations.Operations;
 import rs.ac.bg.fon.ps.server.controller.Controller;
+import rs.ac.bg.fon.ps.server.so.usluga.KreirajUsluguSO;
+import rs.ac.bg.fon.ps.server.so.usluga.ZapamtiUsluguSO;
 
 public class HandleClientThread extends Thread {
 
@@ -54,7 +56,38 @@ public class HandleClientThread extends Thread {
                             response.setResponseType(ResponseType.SUCCESS);
                             break;
                         }
+                        
+                        case Operations.KREIRAJ_USLUGU: {
+                            Usluga praznaUsluga = (Usluga) request.getArgument();
+                            Usluga kreiranaUsluga = Controller.getInstance().kreirajUslugu(praznaUsluga);
 
+                            // Vraćamo klijentu objekat koji sada u sebi ima popunjen ID (iz baze)
+                            response.setResult(kreiranaUsluga); 
+                            response.setResponseType(ResponseType.SUCCESS);
+                            break;
+                        }
+                        case Operations.ZAPAMTI_USLUGU:{
+                            Usluga uslugaZaPamcenje = (Usluga) request.getArgument();
+                            Controller.getInstance().zapamtiUslugu(uslugaZaPamcenje);
+
+                            response.setResult(null); // Ne vraćamo ništa specifično nazad
+                            response.setResponseType(ResponseType.SUCCESS);
+                            break;
+                        }
+                        
+                        case Operations.KREIRAJ_KLIJENTA: {
+                            Klijent noviKlijent = Controller.getInstance().kreirajKlijenta();
+                            response.setResult(noviKlijent);
+                            response.setResponseType(ResponseType.SUCCESS);
+                            break;
+                        }
+                        case Operations.ZAPAMTI_KLIJENTA: {
+                            Klijent klijentZaCuvanje = (Klijent) request.getArgument();
+                            Controller.getInstance().zapamtiKlijenta(klijentZaCuvanje);
+                            response.setResponseType(ResponseType.SUCCESS);
+                            break;
+                        }
+                        
                         case Operations.GET_ALL_KLIJENT: {
                             List<GenericEntity> lista = Controller.getInstance().getAllKlijent();
                             response.setResult(lista);
@@ -75,8 +108,12 @@ public class HandleClientThread extends Thread {
                         }
 
                         case Operations.SEARCH_KLIJENT: {
-                            String kriterijum = (String) request.getArgument();
+                            // Sada citamo Klijent objekat, a ne String!
+                            Klijent kriterijum = (Klijent) request.getArgument();
+
+                            // Prosledjujemo taj objekat serverskom kontroleru
                             List<GenericEntity> lista = Controller.getInstance().searchKlijent(kriterijum);
+
                             response.setResult(lista);
                             response.setResponseType(ResponseType.SUCCESS);
                             break;
@@ -102,8 +139,12 @@ public class HandleClientThread extends Thread {
                         }
 
                         case Operations.SEARCH_USLUGA: {
-                            String kriterijum = (String) request.getArgument();
+                            // 1. Sada primamo ceo objekat Usluga sa klijenta, a ne String
+                            Usluga kriterijum = (Usluga) request.getArgument();
+
+                            // 2. Prosleđujemo taj objekat kontroleru
                             List<GenericEntity> lista = Controller.getInstance().searchUsluga(kriterijum);
+
                             response.setResult(lista);
                             response.setResponseType(ResponseType.SUCCESS);
                             break;

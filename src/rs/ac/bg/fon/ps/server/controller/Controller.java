@@ -43,6 +43,17 @@ public class Controller {
 
         return so.getUlogovaniZubar();
     }
+    
+    public Klijent kreirajKlijenta() throws Exception {
+        KreirajKlijentaSO so = new KreirajKlijentaSO();
+        so.templateExecute(new Klijent()); // Saljemo praznog da ga SO obradi
+        return so.getKlijent();
+    }
+
+    public void zapamtiKlijenta(Klijent klijent) throws Exception {
+        ZapamtiKlijentaSO so = new ZapamtiKlijentaSO();
+        so.templateExecute(klijent);
+    }
 
     public void addKlijent(Klijent klijent) throws Exception {
         AddKlijentSO so = new AddKlijentSO();
@@ -65,13 +76,9 @@ public class Controller {
         so.templateExecute(klijent);
     }
 
-    public List<GenericEntity> searchKlijent(String kriterijum) throws Exception {
-        Klijent k = new Klijent();
-        k.setIme(kriterijum);
-
+    public List<GenericEntity> searchKlijent(Klijent klijent) throws Exception {
         SearchKlijentSO so = new SearchKlijentSO();
-        so.templateExecute(k);
-
+        so.templateExecute(klijent); // Saljemo objekat u sistemsku operaciju
         return so.getLista();
     }
 
@@ -100,6 +107,18 @@ public class Controller {
         AddUslugaSO so = new AddUslugaSO();
         so.templateExecute(usluga);
     }
+    
+    public Usluga kreirajUslugu(Usluga usluga) throws Exception {
+        KreirajUsluguSO so = new KreirajUsluguSO();
+        so.templateExecute(usluga);
+        // Operacija će setovati generisani ID u prosleđeni objekat 'usluga', pa ga samo vratimo
+        return usluga; 
+    }
+
+    public void zapamtiUslugu(Usluga usluga) throws Exception {
+        ZapamtiUsluguSO so = new ZapamtiUsluguSO();
+        so.templateExecute(usluga);
+    }
 
     public List<GenericEntity> getAllUsluga() throws Exception {
         GetAllUslugaSO so = new GetAllUslugaSO();
@@ -112,13 +131,9 @@ public class Controller {
         so.templateExecute(usluga);
     }
 
-    public List<GenericEntity> searchUsluga(String kriterijum) throws Exception {
-        Usluga u = new Usluga();
-        u.setNaziv(kriterijum);
-
+    public List<GenericEntity> searchUsluga(Usluga u) throws Exception {
         SearchUslugaSO so = new SearchUslugaSO();
         so.templateExecute(u);
-
         return so.getLista();
     }
 

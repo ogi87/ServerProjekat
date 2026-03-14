@@ -22,8 +22,7 @@ public class SearchUslugaSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        Usluga usluga = (Usluga) entity;
-        String kriterijum = usluga.getNaziv() == null ? "" : usluga.getNaziv().trim();
-        lista = broker.searchUsluga(kriterijum);
+        // Poziva tvoju novu metodu iz brokera koja prima objekat Usluga
+        lista = broker.searchUsluga((rs.ac.bg.fon.ps.common.domain.Usluga) entity);
     }
 }

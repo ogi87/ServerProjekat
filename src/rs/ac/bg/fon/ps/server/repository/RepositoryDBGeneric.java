@@ -66,19 +66,40 @@ public class RepositoryDBGeneric {
         return lista;
     }
 
-    public List<GenericEntity> searchKlijent(String kriterijum) throws Exception {
-        String query = "SELECT k.id_klijent, k.ime, k.prezime, k.kontakt, "
-                + "kk.id_kategorija, kk.naziv AS kategorija_naziv, kk.popust AS kategorija_popust "
-                + "FROM klijent k "
-                + "JOIN kategorija_klijenta kk ON k.id_kategorija = kk.id_kategorija "
-                + "WHERE LOWER(k.ime) LIKE ? OR LOWER(k.prezime) LIKE ?";
+    public List<GenericEntity> searchKlijent(Klijent kriterijum) throws Exception {
+        // Tvoj originalni SELECT i JOIN, ali sa "WHERE 1=1" da mozemo lako da lepimo uslove
+        StringBuilder query = new StringBuilder(
+                "SELECT k.id_klijent, k.ime, k.prezime, k.kontakt, " +
+                "kk.id_kategorija, kk.naziv AS kategorija_naziv, kk.popust AS kategorija_popust " +
+                "FROM klijent k " +
+                "JOIN kategorija_klijenta kk ON k.id_kategorija = kk.id_kategorija " +
+                "WHERE 1=1" 
+        );
+
+        // Proveravamo sta je zubar poslao (ime, kategorija ili oba)
+        boolean traziPoImenu = kriterijum.getIme() != null && !kriterijum.getIme().trim().isEmpty();
+        boolean traziPoKategoriji = kriterijum.getKategorija() != null;
+
+        if (traziPoImenu) {
+            query.append(" AND (LOWER(k.ime) LIKE ? OR LOWER(k.prezime) LIKE ?)");
+        }
+        if (traziPoKategoriji) {
+            query.append(" AND k.id_kategorija = ?");
+        }
 
         Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
+        PreparedStatement ps = connection.prepareStatement(query.toString());
 
-        String like = "%" + kriterijum.toLowerCase() + "%";
-        ps.setString(1, like);
-        ps.setString(2, like);
+        // Dinamicko popunjavanje upitnika (?) zavisno od toga sta je izabrano
+        int paramIndex = 1;
+        if (traziPoImenu) {
+            String like = "%" + kriterijum.getIme().trim().toLowerCase() + "%";
+            ps.setString(paramIndex++, like);
+            ps.setString(paramIndex++, like);
+        }
+        if (traziPoKategoriji) {
+            ps.setLong(paramIndex++, kriterijum.getKategorija().getKategorijaId());
+        }
 
         ResultSet rs = ps.executeQuery();
 
@@ -128,25 +149,24 @@ public class RepositoryDBGeneric {
         return lista;
     }
 
-    public List<GenericEntity> searchUsluga(String kriterijum) throws Exception {
+   public List<GenericEntity> searchUsluga(Usluga uslugaPretraga) throws Exception {
+        // Pravimo upit, a WHERE deo lepimo iz nase domenske klase
         String query = "SELECT u.id_usluga, u.naziv, u.ukupan_iznos, u.popust, u.ukupan_iznos_sa_popustom, "
                 + "z.id_zubar, z.ime AS zubar_ime, z.prezime AS zubar_prezime, "
                 + "k.id_klijent, k.ime AS klijent_ime, k.prezime AS klijent_prezime "
                 + "FROM usluga u "
                 + "JOIN zubar z ON u.id_zubar = z.id_zubar "
                 + "JOIN klijent k ON u.id_klijent = k.id_klijent "
-                + "WHERE LOWER(u.naziv) LIKE ?";
+                + "WHERE " + uslugaPretraga.getWhereCondition();
 
         Connection connection = DbConnectionFactory.getInstance().getConnection();
         PreparedStatement ps = connection.prepareStatement(query);
-
-        String like = "%" + kriterijum.toLowerCase() + "%";
-        ps.setString(1, like);
-
+        // Obrati paznju: Nema vise ps.setString(...) jer je getWhereCondition vec zalepio vrednosti!
+        
         ResultSet rs = ps.executeQuery();
 
-        Usluga usluga = new Usluga();
-        List<GenericEntity> lista = usluga.getListFromResultSet(rs);
+        Usluga u = new Usluga();
+        List<GenericEntity> lista = u.getListFromResultSet(rs);
 
         rs.close();
         ps.close();
