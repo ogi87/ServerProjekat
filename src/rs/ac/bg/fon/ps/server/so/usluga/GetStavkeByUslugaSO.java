@@ -2,6 +2,7 @@ package rs.ac.bg.fon.ps.server.so.usluga;
 
 import java.util.List;
 import rs.ac.bg.fon.ps.common.domain.GenericEntity;
+import rs.ac.bg.fon.ps.common.domain.StavkaUsluge;
 import rs.ac.bg.fon.ps.common.domain.Usluga;
 import rs.ac.bg.fon.ps.server.so.AbstractSO;
 
@@ -23,6 +24,12 @@ public class GetStavkeByUslugaSO extends AbstractSO {
     @Override
     protected void execute(GenericEntity entity) throws Exception {
         Usluga usluga = (Usluga) entity;
-        lista = broker.getStavkeByUsluga(usluga);
+        
+        // Правимо празну ставку и дајемо јој ID услуге
+        StavkaUsluge su = new StavkaUsluge();
+        su.setUsluga(usluga);
+        
+        // Сада брокер претражује табелу 'stavka_usluge'
+        lista = broker.getByCondition(su);
     }
 }

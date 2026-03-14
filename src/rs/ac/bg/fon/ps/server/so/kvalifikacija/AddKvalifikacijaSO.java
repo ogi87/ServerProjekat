@@ -9,19 +9,19 @@ public class AddKvalifikacijaSO extends AbstractSO {
     @Override
     protected void validate(GenericEntity entity) throws Exception {
         if (!(entity instanceof Kvalifikacija)) {
-            throw new Exception("Прослеђени објекат није типа Квалификација.");
+            throw new Exception("Prosledjeni objekat nije tipa Kvalifikacija.");
         }
-        Kvalifikacija k = (Kvalifikacija) entity;
         
-        // Валидација (Корак 2 на страни сервера)
+        Kvalifikacija k = (Kvalifikacija) entity;
         if (k.getNaziv() == null || k.getNaziv().trim().isEmpty()) {
-            throw new Exception("Назив квалификације је обавезан!");
+            throw new Exception("Naziv kvalifikacije ne sme biti prazan.");
         }
     }
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // Позивамо генеричку методу за чување из брокера
+        // Позивамо генерички инсерт
         broker.save(entity);
     }
+    
 }

@@ -3,6 +3,7 @@ package rs.ac.bg.fon.ps.server.db;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import rs.ac.bg.fon.ps.server.config.Konfiguracija;
 
 public class DbConnectionFactory {
 
@@ -23,9 +24,9 @@ public class DbConnectionFactory {
 
         if (connection == null || connection.isClosed()) {
 
-            String url = "jdbc:mysql://localhost:3306/stomatoloska_ordinacija";
-            String username = "root";
-            String password = "";
+            String url = Konfiguracija.getInstance().getProperty("url");
+            String username = Konfiguracija.getInstance().getProperty("username");
+            String password = Konfiguracija.getInstance().getProperty("password");
 
             connection = DriverManager.getConnection(url, username, password);
             connection.setAutoCommit(false);

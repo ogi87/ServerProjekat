@@ -22,6 +22,6 @@ public class GetAllUslugaSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        lista = broker.getAllUsluga();
+        lista = broker.getAll(entity);
     }
 }

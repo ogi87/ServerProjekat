@@ -10,284 +10,161 @@ import rs.ac.bg.fon.ps.common.domain.Klijent;
 import rs.ac.bg.fon.ps.common.domain.StavkaUsluge;
 import rs.ac.bg.fon.ps.common.domain.Usluga;
 import rs.ac.bg.fon.ps.common.domain.Zubar;
-import rs.ac.bg.fon.ps.common.domain.ZubarKvalifikacija;
 import rs.ac.bg.fon.ps.server.db.DbConnectionFactory;
 
 public class RepositoryDBGeneric {
 
+    // 1. GENERIČKO ČUVANJE (INSERT)
     public void save(GenericEntity entity) throws Exception {
-        String query = "INSERT INTO " + entity.getTableName()
-                + " (" + entity.getColumnNamesForInsert() + ") VALUES (" + entity.getInsertValues() + ")";
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("INSERT INTO ")
+                    .append(entity.getTableName())
+                    .append(" (").append(entity.getColumnNamesForInsert()).append(") ")
+                    .append("VALUES (").append(entity.getInsertValues()).append(")");
 
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-        ps.executeUpdate();
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
 
-        ResultSet rs = ps.getGeneratedKeys();
-        if (rs.next()) {
-            entity.setId(rs.getLong(1));
+            // RETURN_GENERATED_KEYS nam vraća ID koji je baza napravila (npr. za Uslugu ili Klijenta)
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+
+            ResultSet rsKey = statement.getGeneratedKeys();
+            if (rsKey.next()) {
+                Long id = rsKey.getLong(1);
+                entity.setId(id);
+            }
+            statement.close();
+            rsKey.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri čuvanju objekta: " + ex.getMessage());
         }
-
-        rs.close();
-        ps.close();
     }
 
+    // 2. GENERIČKO UČITAVANJE SVIH (SELECT *)
     public List<GenericEntity> getAll(GenericEntity entity) throws Exception {
-        String query = "SELECT * FROM " + entity.getTableName() + " ORDER BY " + entity.getPrimaryKeyColumnName() + " ASC";
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT ")
+              .append(entity.getSelectValues()).append(" FROM ")
+              .append(entity.getTableName()).append(" ")
+              .append(entity.getAliases()).append(" ")
+              .append(entity.getJoinClause());
 
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
 
-        List<GenericEntity> lista = entity.getListFromResultSet(rs);
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(query);
 
-        rs.close();
-        ps.close();
-
-        return lista;
+            List<GenericEntity> lista = entity.getListFromResultSet(rs);
+            statement.close();
+            rs.close();
+            return lista;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri učitavanju objekata: " + ex.getMessage());
+        }
     }
 
-    public List<GenericEntity> getAllKlijent() throws Exception {
-        String query = "SELECT k.id_klijent, k.ime, k.prezime, k.kontakt, "
-                + "kk.id_kategorija, kk.naziv AS kategorija_naziv, kk.popust AS kategorija_popust "
-                + "FROM klijent k "
-                + "JOIN kategorija_klijenta kk ON k.id_kategorija = kk.id_kategorija";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
-
-        Klijent klijent = new Klijent();
-        List<GenericEntity> lista = klijent.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
+    // 3. GENERIČKA PRETRAGA SA USLOVOM (SELECT * WHERE...)
     public List<GenericEntity> getByCondition(GenericEntity entity) throws Exception {
-        // Pravimo generički upit spajanjem imena tabele i WHERE uslova
-        String query = "SELECT * FROM " + entity.getTableName() + " WHERE " + entity.getWhereCondition();
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT ")
+              .append(entity.getSelectValues()).append(" FROM ")
+              .append(entity.getTableName()).append(" ")
+              .append(entity.getAliases()).append(" ")
+              .append(entity.getJoinClause()).append(" ")
+              .append("WHERE ").append(entity.getWhereCondition());
 
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
 
-        // Domenska klasa sama mapira ResultSet u listu objekata
-        List<GenericEntity> lista = entity.getListFromResultSet(rs);
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(query);
 
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-    
-    public List<GenericEntity> searchKlijent(Klijent kriterijum) throws Exception {
-        // Tvoj originalni SELECT i JOIN, ali sa "WHERE 1=1" da mozemo lako da lepimo uslove
-        StringBuilder query = new StringBuilder(
-                "SELECT k.id_klijent, k.ime, k.prezime, k.kontakt, " +
-                "kk.id_kategorija, kk.naziv AS kategorija_naziv, kk.popust AS kategorija_popust " +
-                "FROM klijent k " +
-                "JOIN kategorija_klijenta kk ON k.id_kategorija = kk.id_kategorija " +
-                "WHERE 1=1" 
-        );
-
-        // Proveravamo sta je zubar poslao (ime, kategorija ili oba)
-        boolean traziPoImenu = kriterijum.getIme() != null && !kriterijum.getIme().trim().isEmpty();
-        boolean traziPoKategoriji = kriterijum.getKategorija() != null;
-
-        if (traziPoImenu) {
-            query.append(" AND (LOWER(k.ime) LIKE ? OR LOWER(k.prezime) LIKE ?)");
+            List<GenericEntity> lista = entity.getListFromResultSet(rs);
+            statement.close();
+            rs.close();
+            return lista;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri pretrazi objekata: " + ex.getMessage());
         }
-        if (traziPoKategoriji) {
-            query.append(" AND k.id_kategorija = ?");
-        }
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query.toString());
-
-        // Dinamicko popunjavanje upitnika (?) zavisno od toga sta je izabrano
-        int paramIndex = 1;
-        if (traziPoImenu) {
-            String like = "%" + kriterijum.getIme().trim().toLowerCase() + "%";
-            ps.setString(paramIndex++, like);
-            ps.setString(paramIndex++, like);
-        }
-        if (traziPoKategoriji) {
-            ps.setLong(paramIndex++, kriterijum.getKategorija().getKategorijaId());
-        }
-
-        ResultSet rs = ps.executeQuery();
-
-        Klijent klijent = new Klijent();
-        List<GenericEntity> lista = klijent.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
     }
 
-    public List<GenericEntity> getAllZubar() throws Exception {
-        String query = "SELECT id_zubar, ime, prezime, korisnicko_ime, sifra FROM zubar";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
-
-        Zubar zubar = new Zubar();
-        List<GenericEntity> lista = zubar.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
-    public List<GenericEntity> getAllUsluga() throws Exception {
-        String query = "SELECT u.id_usluga, u.naziv, u.ukupan_iznos, u.popust, u.ukupan_iznos_sa_popustom, "
-                + "z.id_zubar, z.ime AS zubar_ime, z.prezime AS zubar_prezime, "
-                + "k.id_klijent, k.ime AS klijent_ime, k.prezime AS klijent_prezime "
-                + "FROM usluga u "
-                + "JOIN zubar z ON u.id_zubar = z.id_zubar "
-                + "JOIN klijent k ON u.id_klijent = k.id_klijent";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
-
-        Usluga usluga = new Usluga();
-        List<GenericEntity> lista = usluga.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
-   public List<GenericEntity> searchUsluga(Usluga uslugaPretraga) throws Exception {
-        // Pravimo upit, a WHERE deo lepimo iz nase domenske klase
-        String query = "SELECT u.id_usluga, u.naziv, u.ukupan_iznos, u.popust, u.ukupan_iznos_sa_popustom, "
-                + "z.id_zubar, z.ime AS zubar_ime, z.prezime AS zubar_prezime, "
-                + "k.id_klijent, k.ime AS klijent_ime, k.prezime AS klijent_prezime "
-                + "FROM usluga u "
-                + "JOIN zubar z ON u.id_zubar = z.id_zubar "
-                + "JOIN klijent k ON u.id_klijent = k.id_klijent "
-                + "WHERE " + uslugaPretraga.getWhereCondition();
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        // Obrati paznju: Nema vise ps.setString(...) jer je getWhereCondition vec zalepio vrednosti!
-        
-        ResultSet rs = ps.executeQuery();
-
-        Usluga u = new Usluga();
-        List<GenericEntity> lista = u.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
-    public List<GenericEntity> getStavkeByUsluga(Usluga usluga) throws Exception {
-        String query = "SELECT su.id_usluga, su.rb, su.kolicina, su.cena, su.iznos, "
-                + "m.id_materijal, m.naziv AS materijal_naziv, m.cena AS materijal_cena "
-                + "FROM stavka_usluge su "
-                + "JOIN materijal m ON su.id_materijal = m.id_materijal "
-                + "WHERE su.id_usluga = ? "
-                + "ORDER BY su.rb";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setLong(1, usluga.getUslugaId());
-
-        ResultSet rs = ps.executeQuery();
-
-        StavkaUsluge stavka = new StavkaUsluge();
-        List<GenericEntity> lista = stavka.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
-    public List<GenericEntity> getAllZubarKvalifikacija() throws Exception {
-        String query = "SELECT zk.id_zubar, zk.id_kvalifikacija, zk.datum_sticanja, "
-                + "z.ime AS zubar_ime, z.prezime AS zubar_prezime, "
-                + "k.naziv AS kvalifikacija_naziv "
-                + "FROM zubar_kvalifikacija zk "
-                + "JOIN zubar z ON zk.id_zubar = z.id_zubar "
-                + "JOIN kvalifikacija k ON zk.id_kvalifikacija = k.id_kvalifikacija";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ResultSet rs = ps.executeQuery();
-
-        ZubarKvalifikacija zk = new ZubarKvalifikacija();
-        List<GenericEntity> lista = zk.getListFromResultSet(rs);
-
-        rs.close();
-        ps.close();
-
-        return lista;
-    }
-
-    public void delete(GenericEntity entity) throws Exception {
-        String query = "DELETE FROM " + entity.getTableName()
-                + " WHERE " + entity.getPrimaryKeyColumnName() + " = ?";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setLong(1, entity.getPrimaryKeyValue());
-        ps.executeUpdate();
-        ps.close();
-    }
-
+    // 4. GENERIČKA IZMJENA (UPDATE)
     public void update(GenericEntity entity) throws Exception {
-        String query = "UPDATE " + entity.getTableName()
-                + " SET " + entity.getUpdateSetClause()
-                + " WHERE " + entity.getPrimaryKeyColumnName() + " = ?";
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("UPDATE ")
+                    .append(entity.getTableName())
+                    .append(" SET ")
+                    .append(entity.getUpdateSetClause())
+                    .append(" WHERE ")
+                    .append(entity.getPrimaryKeyColumnName()).append(" = ").append(entity.getPrimaryKeyValue());
 
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setLong(1, entity.getPrimaryKeyValue());
-        ps.executeUpdate();
-        ps.close();
-    }
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
 
-    public void deleteStavkeByUsluga(Usluga usluga) throws Exception {
-        String query = "DELETE FROM stavka_usluge WHERE id_usluga = ?";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setLong(1, usluga.getUslugaId());
-        ps.executeUpdate();
-        ps.close();
-    }
-
-    public void updateUslugaSaStavkama(Usluga usluga) throws Exception {
-        update(usluga);
-        deleteStavkeByUsluga(usluga);
-
-        int rb = 1;
-        for (StavkaUsluge stavka : usluga.getStavke()) {
-            stavka.setUsluga(usluga);
-            stavka.setRb(rb++);
-            save(stavka);
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
+            statement.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri ažuriranju objekta: " + ex.getMessage());
         }
     }
 
-    public void deleteZubarKvalifikacija(ZubarKvalifikacija zk) throws Exception {
-        String query = "DELETE FROM zubar_kvalifikacija WHERE id_zubar = ? AND id_kvalifikacija = ?";
+    // 5. GENERIČKO BRISANJE PO ID-u (DELETE)
+    public void delete(GenericEntity entity) throws Exception {
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("DELETE FROM ")
+                    .append(entity.getTableName())
+                    .append(" WHERE ")
+                    .append(entity.getPrimaryKeyColumnName()).append(" = ").append(entity.getPrimaryKeyValue());
 
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setLong(1, zk.getZubar().getZubarId());
-        ps.setLong(2, zk.getKvalifikacija().getKvalifikacijaId());
-        ps.executeUpdate();
-        ps.close();
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
+
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
+            statement.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri brisanju objekta: " + ex.getMessage());
+        }
     }
+
+    // 6. GENERIČKO BRISANJE PO USLOVU (Koristićemo za brisanje starih stavki usluge)
+    public void deleteByCondition(GenericEntity entity) throws Exception {
+        try {
+            Connection connection = DbConnectionFactory.getInstance().getConnection();
+            StringBuilder sb = new StringBuilder();
+            sb.append("DELETE FROM ")
+                    .append(entity.getTableName())
+                    .append(" WHERE ")
+                    .append(entity.getWhereCondition());
+
+            String query = sb.toString();
+            System.out.println("Izvršavam upit: " + query);
+
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
+            statement.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new Exception("Greška pri uslovnom brisanju: " + ex.getMessage());
+        }
+    }
+
 }

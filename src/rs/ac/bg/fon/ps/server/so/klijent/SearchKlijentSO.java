@@ -26,6 +26,6 @@ public class SearchKlijentSO extends AbstractSO {
         Klijent klijentKriterijum = (Klijent) entity;
         
         // 2. OVO JE KLJUCNO: Saljemo CELOG klijenta (sa imenom i kategorijom) u broker!
-        lista = broker.searchKlijent(klijentKriterijum);
+        lista = broker.getByCondition(klijentKriterijum);
     }
 }
