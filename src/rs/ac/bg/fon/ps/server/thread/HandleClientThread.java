@@ -42,13 +42,13 @@ public class HandleClientThread extends Thread {
                     switch (request.getOperation()) {
 
                         case Operations.LOGIN: {
-                            Object[] podaci = (Object[]) request.getArgument();
-                            String korisnickoIme = (String) podaci[0];
-                            String sifra = (String) podaci[1];
+                        // Сада знамо да клијент шаље објекат Zubar, па га тако и преузимамо
+                        Zubar zubar = (Zubar) request.getArgument(); 
 
-                            response.setResult(Controller.getInstance().login(korisnickoIme, sifra));
-                            response.setResponseType(ResponseType.SUCCESS);
-                            break;
+                        // Прослеђујемо целог зубара у контролер
+                        response.setResult(Controller.getInstance().login(zubar));
+                        response.setResponseType(ResponseType.SUCCESS);
+                        break;
                         }
 
                         case Operations.ADD_KLIJENT: {

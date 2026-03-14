@@ -33,13 +33,11 @@ public class Controller {
         return instance;
     }
 
-    public Zubar login(String korisnickoIme, String sifra) throws Exception {
-        Zubar z = new Zubar();
-        z.setKorisnickoIme(korisnickoIme);
-        z.setSifra(sifra);
-
+    public Zubar login(Zubar zubar) throws Exception {
         LoginSO so = new LoginSO();
-        so.templateExecute(z);
+
+        // Само прослеђујемо зубара у системску операцију
+        so.templateExecute(zubar);
 
         return so.getUlogovaniZubar();
     }

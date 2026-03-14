@@ -3,6 +3,7 @@ package rs.ac.bg.fon.ps.server.so.login;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 import rs.ac.bg.fon.ps.common.domain.GenericEntity;
 import rs.ac.bg.fon.ps.common.domain.Zubar;
 import rs.ac.bg.fon.ps.server.db.DbConnectionFactory;
@@ -25,31 +26,15 @@ public class LoginSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        Zubar z = (Zubar) entity;
+        // 1. Pozivamo našu novu generičku metodu iz brokera
+        List<GenericEntity> lista = broker.getByCondition(entity);
 
-        String sql = "SELECT id_zubar, ime, prezime, korisnicko_ime, sifra "
-                + "FROM zubar WHERE korisnicko_ime = ? AND sifra = ?";
-
-        Connection connection = DbConnectionFactory.getInstance().getConnection();
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setString(1, z.getKorisnickoIme());
-        ps.setString(2, z.getSifra());
-
-        ResultSet rs = ps.executeQuery();
-
-        if (rs.next()) {
-            ulogovaniZubar = new Zubar(
-                    rs.getLong("id_zubar"),
-                    rs.getString("ime"),
-                    rs.getString("prezime"),
-                    rs.getString("korisnicko_ime"),
-                    rs.getString("sifra")
-            );
+        // 2. Ako lista nije prazna, našli smo zubara
+        if (lista != null && !lista.isEmpty()) {
+            ulogovaniZubar = (Zubar) lista.get(0);
         } else {
-            throw new Exception("Ne postoji zubar sa tim kredencijalima.");
+            // 3. Alternativni scenario 5.1 (Pazi da tekst ostane tačno ovakav!)
+            throw new Exception("Корисничко име и шифра нису исправни");
         }
-
-        rs.close();
-        ps.close();
     }
 }

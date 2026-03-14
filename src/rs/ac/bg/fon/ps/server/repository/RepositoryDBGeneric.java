@@ -33,7 +33,7 @@ public class RepositoryDBGeneric {
     }
 
     public List<GenericEntity> getAll(GenericEntity entity) throws Exception {
-        String query = "SELECT * FROM " + entity.getTableName();
+        String query = "SELECT * FROM " + entity.getTableName() + " ORDER BY " + entity.getPrimaryKeyColumnName() + " ASC";
 
         Connection connection = DbConnectionFactory.getInstance().getConnection();
         PreparedStatement ps = connection.prepareStatement(query);
@@ -66,6 +66,23 @@ public class RepositoryDBGeneric {
         return lista;
     }
 
+    public List<GenericEntity> getByCondition(GenericEntity entity) throws Exception {
+        // Pravimo generički upit spajanjem imena tabele i WHERE uslova
+        String query = "SELECT * FROM " + entity.getTableName() + " WHERE " + entity.getWhereCondition();
+
+        Connection connection = DbConnectionFactory.getInstance().getConnection();
+        PreparedStatement ps = connection.prepareStatement(query);
+        ResultSet rs = ps.executeQuery();
+
+        // Domenska klasa sama mapira ResultSet u listu objekata
+        List<GenericEntity> lista = entity.getListFromResultSet(rs);
+
+        rs.close();
+        ps.close();
+
+        return lista;
+    }
+    
     public List<GenericEntity> searchKlijent(Klijent kriterijum) throws Exception {
         // Tvoj originalni SELECT i JOIN, ali sa "WHERE 1=1" da mozemo lako da lepimo uslove
         StringBuilder query = new StringBuilder(
