@@ -122,7 +122,7 @@ public class HandleClientThread extends Thread {
                             break;
                         }
 
-                        // ================== SIFARNICI (Samo citanje) ==================
+                        // ================== SIFARNICI  ==================
                         case Operations.GET_ALL_ZUBAR: {
                             List<GenericEntity> lista = Controller.getInstance().getAllZubar();
                             response.setResult(lista);

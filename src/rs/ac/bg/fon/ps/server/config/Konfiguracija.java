@@ -19,7 +19,6 @@ public class Konfiguracija {
     private Konfiguracija() {
         properties = new Properties();
         try {
-            // Читамо фајл који смо направили у Кораку 1
             properties.load(new FileInputStream("config.properties"));
         } catch (Exception ex) {
             ex.printStackTrace();

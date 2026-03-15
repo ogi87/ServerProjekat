@@ -25,11 +25,9 @@ public class GetStavkeByUslugaSO extends AbstractSO {
     protected void execute(GenericEntity entity) throws Exception {
         Usluga usluga = (Usluga) entity;
         
-        // Правимо празну ставку и дајемо јој ID услуге
         StavkaUsluge su = new StavkaUsluge();
         su.setUsluga(usluga);
-        
-        // Сада брокер претражује табелу 'stavka_usluge'
+
         lista = broker.getByCondition(su);
     }
 }

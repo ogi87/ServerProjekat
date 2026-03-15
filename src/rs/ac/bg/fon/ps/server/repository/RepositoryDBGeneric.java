@@ -99,7 +99,7 @@ public class RepositoryDBGeneric {
         }
     }
 
-    // 4. GENERIČKA IZMJENA (UPDATE)
+    // 4. GENERIČKA IZMENA (UPDATE)
     public void update(GenericEntity entity) throws Exception {
         try {
             Connection connection = DbConnectionFactory.getInstance().getConnection();
@@ -145,7 +145,7 @@ public class RepositoryDBGeneric {
         }
     }
 
-    // 6. GENERIČKO BRISANJE PO USLOVU (Koristićemo za brisanje starih stavki usluge)
+    // 6. GENERIČKO BRISANJE PO USLOVU
     public void deleteByCondition(GenericEntity entity) throws Exception {
         try {
             Connection connection = DbConnectionFactory.getInstance().getConnection();

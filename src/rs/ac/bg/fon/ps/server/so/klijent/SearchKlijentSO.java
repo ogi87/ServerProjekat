@@ -22,10 +22,9 @@ public class SearchKlijentSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // 1. Pretvaramo genericki entitet u Klijenta
+        
         Klijent klijentKriterijum = (Klijent) entity;
         
-        // 2. OVO JE KLJUCNO: Saljemo CELOG klijenta (sa imenom i kategorijom) u broker!
         lista = broker.getByCondition(klijentKriterijum);
     }
 }

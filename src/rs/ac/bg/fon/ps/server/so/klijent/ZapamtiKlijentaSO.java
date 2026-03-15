@@ -15,8 +15,8 @@ public class ZapamtiKlijentaSO extends AbstractSO
 {
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // Zovemo broker da uradi INSERT INTO klijent...
-        broker.save(entity); // Napomena: Umesto save(), možda se tvoja metoda u brokeru zove add(entity) ili insert(entity)
+        
+        broker.save(entity);
     }
 
     @Override

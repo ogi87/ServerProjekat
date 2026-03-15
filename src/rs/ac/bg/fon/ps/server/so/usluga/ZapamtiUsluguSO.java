@@ -42,15 +42,12 @@ public class ZapamtiUsluguSO extends AbstractSO {
 
         Usluga usluga = (Usluga) entity;
 
-        // 1. Ažuriramo glavne podatke o usluzi
         broker.update(usluga);
 
-        // 2. BRIŠEMO STARE STAVKE TE USLUGE (Ovo smo ispravili)
         StavkaUsluge stavkaZaBrisanje = new StavkaUsluge();
         stavkaZaBrisanje.setUsluga(usluga);
-        broker.deleteByCondition(stavkaZaBrisanje); // Sada broker zna da briše iz tabele stavka_usluge!
+        broker.deleteByCondition(stavkaZaBrisanje);
 
-        // 3. Upisujemo nove stavke iz tabele sa forme
         int rb = 1;
         for (StavkaUsluge stavka : usluga.getStavke()) {
             stavka.setUsluga(usluga);

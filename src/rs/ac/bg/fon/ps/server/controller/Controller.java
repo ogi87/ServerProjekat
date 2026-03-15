@@ -96,7 +96,7 @@ public class Controller {
         return so.getLista();
     }
 
-    // ================== SIFARNICI (Samo citanje) ==================
+    // ================== SIFARNICI ==================
     public List<GenericEntity> getAllMaterijal() throws Exception {
         GetAllMaterijalSO so = new GetAllMaterijalSO();
         so.templateExecute(new Materijal());

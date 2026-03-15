@@ -17,12 +17,9 @@ public class KreirajKlijentaSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // Sistem "generiše" novog klijenta
+        
         klijent = new Klijent(); 
         
-        // Ako u bazi ne koristiš Auto-Increment za ID, ovde bi išao kod 
-        // koji vadi max(id) iz baze i dodeljuje ga novom klijentu.
-        // Ali pošto verovatno koristiš Auto-Increment, ovo je dovoljno!
     }
 
     public Klijent getKlijent() {

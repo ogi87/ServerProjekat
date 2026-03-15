@@ -20,7 +20,6 @@ public class AddKvalifikacijaSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // Позивамо генерички инсерт
         broker.save(entity);
     }
     

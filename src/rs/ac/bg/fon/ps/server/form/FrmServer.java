@@ -96,7 +96,7 @@ public class FrmServer extends javax.swing.JFrame {
         serverThread.start();
         
         lblStatus.setText("Сервер је покренут");
-        lblStatus.setForeground(java.awt.Color.GREEN); // Или плава, како волиш
+        lblStatus.setForeground(java.awt.Color.GREEN);
         
         btnPokreni.setEnabled(false);
         btnZaustavi.setEnabled(true);

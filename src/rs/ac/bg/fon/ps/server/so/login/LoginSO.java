@@ -26,14 +26,11 @@ public class LoginSO extends AbstractSO {
 
     @Override
     protected void execute(GenericEntity entity) throws Exception {
-        // 1. Pozivamo našu novu generičku metodu iz brokera
         List<GenericEntity> lista = broker.getByCondition(entity);
 
-        // 2. Ako lista nije prazna, našli smo zubara
         if (lista != null && !lista.isEmpty()) {
             ulogovaniZubar = (Zubar) lista.get(0);
         } else {
-            // 3. Alternativni scenario 5.1 (Pazi da tekst ostane tačno ovakav!)
             throw new Exception("Корисничко име и шифра нису исправни");
         }
     }

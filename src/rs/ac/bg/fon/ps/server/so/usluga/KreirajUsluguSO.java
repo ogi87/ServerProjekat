@@ -23,7 +23,6 @@ public class KreirajUsluguSO extends AbstractSO {
         Zubar z = new Zubar(); z.setZubarId(1L); u.setZubar(z);
         Klijent k = new Klijent(); k.setKlijentId(1L); u.setKlijent(k);
 
-        // Čuva u bazi i postavlja generisani ID u objekat 'u'
         broker.save(u);
     }
 }

@@ -7,7 +7,7 @@ public class ServerMain {
 
     public static void main(String[] args) {
         FrmServer frmServer = new FrmServer();
-        frmServer.setLocationRelativeTo(null); // Центрира прозор на екран
+        frmServer.setLocationRelativeTo(null);
         frmServer.setVisible(true);
     }
 }
